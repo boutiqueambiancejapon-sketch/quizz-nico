@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Révision HLT - Conducteur de train SNCB</title>
+<style>
+:root{
+  --bleu:#1a3a6b; --bleu2:#2456a6; --cyan:#00a3e0; --vert:#1e9e5a; --rouge:#d23a3a;
+  --or:#e8a800; --bg:#eef2f7; --card:#ffffff; --txt:#1d2733; --muted:#5e6b7a; --bord:#d7e0ea;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--txt);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:18px}
+header.top{background:linear-gradient(135deg,var(--bleu),var(--bleu2));color:#fff;border-radius:16px;
+  padding:22px 24px;margin-bottom:18px;box-shadow:0 6px 18px rgba(26,58,107,.18)}
+header.top h1{font-size:1.45rem;font-weight:700;letter-spacing:.2px}
+header.top p{opacity:.85;font-size:.9rem;margin-top:4px}
+.badge{display:inline-block;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px;font-size:.74rem;margin-top:10px}
+.card{background:var(--card);border:1px solid var(--bord);border-radius:14px;padding:20px;margin-bottom:16px;
+  box-shadow:0 2px 8px rgba(20,40,70,.04)}
+h2.sec{font-size:1rem;text-transform:uppercase;letter-spacing:.6px;color:var(--bleu);margin-bottom:12px;font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--bord);background:#fff;color:var(--txt);border-radius:22px;padding:8px 15px;
+  font-size:.85rem;cursor:pointer;transition:.15s;font-weight:600;user-select:none}
+.chip:hover{border-color:var(--cyan)}
+.chip.on{background:var(--bleu);border-color:var(--bleu);color:#fff}
+.lbl{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:700}
+.grpfilter{margin-bottom:14px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.btn{border:none;border-radius:11px;padding:13px 20px;font-size:.95rem;font-weight:700;cursor:pointer;transition:.15s;flex:1;min-width:150px}
+.btn.primary{background:var(--bleu);color:#fff}
+.btn.primary:hover{background:var(--bleu2)}
+.btn.exam{background:var(--or);color:#3a2c00}
+.btn.exam:hover{filter:brightness(1.05)}
+.btn.ghost{background:#eef2f7;color:var(--bleu);flex:0 0 auto;min-width:auto;padding:10px 16px}
+.btn.ghost:hover{background:#e2e9f2}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.stats{display:flex;gap:12px;flex-wrap:wrap}
+.stat{flex:1;min-width:90px;background:#f4f8fc;border:1px solid var(--bord);border-radius:11px;padding:12px;text-align:center}
+.stat .n{font-size:1.5rem;font-weight:800;color:var(--bleu)}
+.stat .t{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.progbar{height:9px;background:#e3eaf2;border-radius:6px;overflow:hidden;margin:14px 0 4px}
+.progbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--bleu));width:0;transition:width .3s}
+.qmeta{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--muted);margin-bottom:6px;flex-wrap:wrap;gap:6px}
+.tag{display:inline-block;padding:2px 9px;border-radius:14px;font-size:.7rem;font-weight:700;letter-spacing:.3px}
+.tag.d{background:#e3f5ea;color:var(--vert)} .tag.m{background:#fff2d6;color:#9a7400} .tag.x{background:#fbe2e2;color:var(--rouge)}
+.tag.ch{background:#e6f0fb;color:var(--bleu2)}
+.tag.qrm{background:#ece4fb;color:#6b3fc0}
+.timer{font-weight:800;color:var(--bleu);font-variant-numeric:tabular-nums}
+.qtext{font-size:1.12rem;font-weight:600;margin:6px 0 16px;line-height:1.45}
+.opt{display:flex;align-items:flex-start;gap:11px;border:1.5px solid var(--bord);border-radius:11px;padding:13px 15px;
+  margin-bottom:10px;cursor:pointer;transition:.12s;background:#fff}
+.opt:hover{border-color:var(--cyan);background:#f8fbfe}
+.opt .mk{flex:0 0 22px;height:22px;border:2px solid var(--bord);border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:.8rem;font-weight:800;margin-top:1px;color:#fff;transition:.12s}
+.opt.qrm .mk{border-radius:6px}
+.opt.sel{border-color:var(--bleu);background:#f0f6fd}
+.opt.sel .mk{background:var(--bleu);border-color:var(--bleu)}
+.opt.ok{border-color:var(--vert);background:#eefaf2}
+.opt.ok .mk{background:var(--vert);border-color:var(--vert)}
+.opt.bad{border-color:var(--rouge);background:#fdeeee}
+.opt.bad .mk{background:var(--rouge);border-color:var(--rouge)}
+.opt.disabled{cursor:default}
+.opt .otxt{flex:1;padding-top:1px}
+.explain{border-radius:11px;padding:14px 16px;margin-top:6px;font-size:.92rem;display:none;border-left:4px solid}
+.explain.show{display:block}
+.explain.good{background:#eefaf2;border-color:var(--vert)}
+.explain.poor{background:#fdeeee;border-color:var(--rouge)}
+.explain b{display:block;margin-bottom:3px}
+.navq{display:flex;gap:10px;margin-top:16px}
+.hidden{display:none!important}
+.memo h3{font-size:.95rem;color:var(--bleu);cursor:pointer;padding:12px 0;border-bottom:1px solid var(--bord);
+  display:flex;justify-content:space-between;align-items:center}
+.memo h3 .ar{transition:.2s;color:var(--cyan)}
+.memo .body{display:none;padding:6px 0 12px}
+.memo .body.open{display:block}
+.memo .it{padding:9px 0;border-bottom:1px dashed var(--bord)}
+.memo .it:last-child{border:none}
+.memo .it b{color:var(--bleu2);font-size:.9rem}
+.memo .it p{font-size:.88rem;color:var(--txt);margin-top:2px}
+.result-big{text-align:center;padding:10px 0}
+.result-big .score{font-size:3rem;font-weight:800;color:var(--bleu)}
+.result-big .pct{font-size:1.1rem;color:var(--muted)}
+.muted{color:var(--muted);font-size:.86rem}
+.foot{text-align:center;color:var(--muted);font-size:.76rem;padding:10px 0 28px;line-height:1.6}
+.toggle{display:flex;align-items:center;gap:8px;font-size:.86rem;color:var(--muted);margin-top:10px;cursor:pointer}
+.dot{width:40px;height:22px;background:#cfd9e4;border-radius:14px;position:relative;transition:.2s;flex:0 0 auto}
+.dot::after{content:"";position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;left:2px;transition:.2s}
+.toggle.on .dot{background:var(--bleu)} .toggle.on .dot::after{left:20px}
+@media(max-width:560px){.btn{min-width:120px}.qtext{font-size:1.04rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Révision HLT &mdash; Conducteur de train SNCB</h1>
+    <p>Fascicule I &middot; Chapitres 1 à 3 &middot; Avis 01/02/03 B-TO 2026</p>
+    <span class="badge" id="bankInfo">105 questions</span>
+  </header>
+
+  <section id="home">
+    <div class="card">
+      <h2 class="sec">Ta progression</h2>
+      <div class="stats">
+        <div class="stat"><div class="n" id="stSeen">0</div><div class="t">Vues</div></div>
+        <div class="stat"><div class="n" id="stOk">0</div><div class="t">Réussies</div></div>
+        <div class="stat"><div class="n" id="stRate">0%</div><div class="t">Taux</div></div>
+        <div class="stat"><div class="n" id="stWrong">0</div><div class="t">À revoir</div></div>
+      </div>
+      <div class="progbar"><i id="globalProg"></i></div>
+      <div class="muted" id="covTxt">Couverture du programme : 0 / 105 questions abordées</div>
+      <button class="btn ghost" style="margin-top:12px" onclick="resetProgress()">Réinitialiser ma progression</button>
+    </div>
+
+    <div class="card">
+      <h2 class="sec">Choisis ta révision</h2>
+      <div class="grpfilter">
+        <div class="lbl">Chapitre</div>
+        <div class="row" id="fCh"></div>
+      </div>
+      <div class="grpfilter">
+        <div class="lbl">Niveau</div>
+        <div class="row" id="fLvl"></div>
+      </div>
+      <div class="toggle" id="tgWrong" onclick="toggleWrong()">
+        <span class="dot"></span><span>Réviser uniquement mes questions ratées</span>
+      </div>
+      <div class="muted" style="margin-top:12px" id="selCount">&nbsp;</div>
+      <div class="btns">
+        <button class="btn primary" onclick="startQuiz('practice')">S'entraîner (feedback immédiat)</button>
+        <button class="btn exam" onclick="startQuiz('exam')">Mode examen chronométré</button>
+      </div>
+    </div>
+
+    <div class="card memo">
+      <h2 class="sec">Fiches de synthèse / mémo</h2>
+      <div id="memoBox"></div>
+    </div>
+
+    <div class="foot">
+      Outil de révision personnel basé sur le contenu officiel du livret HLT I (SNCB).<br>
+      Le livret reste le document de référence : en cas de doute, vérifie toujours la source.
+    </div>
+  </section>
+
+  <section id="quiz" class="hidden">
+    <div class="card">
+      <div class="qmeta">
+        <span id="qProgress">Question 1 / 10</span>
+        <span class="timer hidden" id="timer">00:00</span>
+      </div>
+      <div class="progbar"><i id="quizProg"></i></div>
+      <div style="margin:14px 0 4px" id="qTags"></div>
+      <div class="qtext" id="qText"></div>
+      <div id="qOpts"></div>
+      <div class="explain" id="explainOk"></div>
+      <div class="explain" id="explainNo"></div>
+      <div class="navq">
+        <button class="btn ghost" onclick="quitQuiz()">Quitter</button>
+        <button class="btn primary" id="actionBtn" onclick="primaryAction()">Valider</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="results" class="hidden">
+    <div class="card">
+      <h2 class="sec" id="resTitle">Résultats</h2>
+      <div class="result-big">
+        <div class="score" id="resScore">0 / 0</div>
+        <div class="pct" id="resPct">0%</div>
+        <div class="muted" id="resMsg" style="margin-top:8px"></div>
+        <div class="muted" id="resTime" style="margin-top:4px"></div>
+      </div>
+      <div class="btns" style="margin-top:14px">
+        <button class="btn ghost" onclick="goHome()">Accueil</button>
+        <button class="btn primary" id="resRetryWrong" onclick="retryWrong()">Revoir mes erreurs</button>
+        <button class="btn exam" onclick="restartSame()">Recommencer</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="data.js"></script>
+<script>
+const LS_KEY="hlt_progress_v1";
+let progress=loadProgress();
+let filters={ch:"all",lvl:"all",onlyWrong:false};
+let session=null;
+
+function loadProgress(){try{return JSON.parse(localStorage.getItem(LS_KEY))||{}}catch(e){return {}}}
+function saveProgress(){try{localStorage.setItem(LS_KEY,JSON.stringify(progress))}catch(e){}}
+
+const CHAPS=[["all","Tous"],["1","Ch.1 Structure"],["2","Ch.2 Connaissances"],["3","Ch.3 Service"]];
+const LVLS=[["all","Tous"],["d","Débutant"],["m","Moyen"],["x","Difficile"]];
+function buildFilters(){
+  const fc=document.getElementById("fCh"),fl=document.getElementById("fLvl");
+  fc.innerHTML="";fl.innerHTML="";
+  CHAPS.forEach(([v,t])=>{const c=mkChip(t,filters.ch===v,()=>{filters.ch=v;buildFilters();updateSel()});fc.appendChild(c)});
+  LVLS.forEach(([v,t])=>{const c=mkChip(t,filters.lvl===v,()=>{filters.lvl=v;buildFilters();updateSel()});fl.appendChild(c)});
+}
+function mkChip(t,on,fn){const d=document.createElement("div");d.className="chip"+(on?" on":"");d.textContent=t;d.onclick=fn;return d}
+function toggleWrong(){filters.onlyWrong=!filters.onlyWrong;
+  document.getElementById("tgWrong").classList.toggle("on",filters.onlyWrong);updateSel()}
+
+function getFiltered(){
+  return QUESTIONS.filter(q=>{
+    if(filters.ch!=="all" && String(q.ch)!==filters.ch) return false;
+    if(filters.lvl!=="all" && q.lvl!==filters.lvl) return false;
+    if(filters.onlyWrong){const p=progress[q.id]; if(!(p&&p.seen&&!p.ok)) return false;}
+    return true;
+  });
+}
+function updateSel(){
+  const n=getFiltered().length;
+  document.getElementById("selCount").textContent=n+" question"+(n>1?"s":"")+" correspondent à ta sélection.";
+  document.querySelectorAll('#home .btn.primary,#home .btn.exam').forEach(b=>b.disabled=n===0);
+}
+
+function refreshStats(){
+  const ids=Object.keys(progress);
+  let seen=0,ok=0,wrong=0;
+  ids.forEach(id=>{const p=progress[id];if(p.seen){seen++; p.ok?ok++:wrong++;}});
+  document.getElementById("stSeen").textContent=seen;
+  document.getElementById("stOk").textContent=ok;
+  document.getElementById("stRate").textContent=(seen?Math.round(ok/seen*100):0)+"%";
+  document.getElementById("stWrong").textContent=wrong;
+  const cov=Math.round(seen/QUESTIONS.length*100);
+  document.getElementById("globalProg").style.width=cov+"%";
+  document.getElementById("covTxt").textContent="Couverture du programme : "+seen+" / "+QUESTIONS.length+" questions abordées";
+}
+function resetProgress(){
+  if(confirm("Effacer toute ta progression enregistrée ?")){progress={};saveProgress();refreshStats();updateSel()}
+}
+
+function buildMemo(){
+  const box=document.getElementById("memoBox");box.innerHTML="";
+  MEMOS.forEach((m,i)=>{
+    const h=document.createElement("h3");
+    h.innerHTML="<span>"+m.titre+"</span><span class='ar'>+</span>";
+    const b=document.createElement("div");b.className="body";
+    m.items.forEach(([t,d])=>{b.insertAdjacentHTML("beforeend","<div class='it'><b>"+t+"</b><p>"+d+"</p></div>")});
+    h.onclick=()=>{b.classList.toggle("open");h.querySelector(".ar").textContent=b.classList.contains("open")?"−":"+"};
+    box.appendChild(h);box.appendChild(b);
+  });
+}
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function startQuiz(mode){
+  let list=getFiltered();
+  if(!list.length)return;
+  list=shuffle(list);
+  session={mode,list,idx:0,picks:[],answered:false,correctCount:0,results:[],startTs:Date.now(),timerId:null};
+  document.getElementById("home").classList.add("hidden");
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  const tm=document.getElementById("timer");
+  if(mode==="exam"){tm.classList.remove("hidden");session.timerId=setInterval(tick,1000);tick();}
+  else tm.classList.add("hidden");
+  renderQ();
+}
+function tick(){
+  const s=Math.floor((Date.now()-session.startTs)/1000);
+  const m=String(Math.floor(s/60)).padStart(2,"0"),ss=String(s%60).padStart(2,"0");
+  document.getElementById("timer").textContent=m+":"+ss;
+}
+const LVLNAME={d:"Débutant",m:"Moyen",x:"Difficile"};
+function renderQ(){
+  const q=session.list[session.idx];
+  session.picks=[];session.answered=false;
+  document.getElementById("qProgress").textContent="Question "+(session.idx+1)+" / "+session.list.length;
+  document.getElementById("quizProg").style.width=((session.idx)/session.list.length*100)+"%";
+  document.getElementById("qTags").innerHTML=
+    "<span class='tag ch'>Ch."+q.ch+"</span> "+
+    "<span class='tag "+q.lvl+"'>"+LVLNAME[q.lvl]+"</span> "+
+    (q.type==="qrm"?"<span class='tag qrm'>Plusieurs réponses</span>":"");
+  document.getElementById("qText").textContent=q.q;
+  const box=document.getElementById("qOpts");box.innerHTML="";
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement("div");
+    d.className="opt"+(q.type==="qrm"?" qrm":"");d.dataset.i=i;
+    d.innerHTML="<span class='mk'></span><span class='otxt'>"+o+"</span>";
+    d.onclick=()=>pick(i,d,q);
+    box.appendChild(d);
+  });
+  const eo=document.getElementById("explainOk"),en=document.getElementById("explainNo");
+  eo.className="explain good";en.className="explain poor";eo.innerHTML="";en.innerHTML="";
+  const btn=document.getElementById("actionBtn");
+  btn.textContent="Valider";btn.disabled=true;
+}
+function pick(i,el,q){
+  if(session.answered)return;
+  if(q.type==="qcm"){
+    session.picks=[i];
+    document.querySelectorAll("#qOpts .opt").forEach(o=>o.classList.remove("sel"));
+    el.classList.add("sel");
+  }else{
+    const p=session.picks.indexOf(i);
+    if(p>=0){session.picks.splice(p,1);el.classList.remove("sel")}
+    else{session.picks.push(i);el.classList.add("sel")}
+  }
+  document.getElementById("actionBtn").disabled=session.picks.length===0;
+}
+function arrEq(a,b){if(a.length!==b.length)return false;const x=a.slice().sort(),y=b.slice().sort();return x.every((v,i)=>v===y[i])}
+
+function primaryAction(){
+  const btn=document.getElementById("actionBtn");
+  if(!session.answered){
+    const q=session.list[session.idx];
+    if(session.picks.length===0)return;
+    session.answered=true;
+    const good=arrEq(session.picks,q.correct);
+    if(good)session.correctCount++;
+    session.results.push({id:q.id,good});
+    const pr=progress[q.id]||{seen:false,ok:false};
+    pr.seen=true; pr.ok = good ? true : false;
+    progress[q.id]=pr;saveProgress();refreshStats();
+    if(session.mode==="practice"){revealAnswer(q,good);}
+    else{nextOrFinish();return;}
+    btn.textContent = (session.idx+1<session.list.length)?"Question suivante":"Voir les résultats";
+  }else{
+    nextOrFinish();
+  }
+}
+function revealAnswer(q,good){
+  document.querySelectorAll("#qOpts .opt").forEach(o=>{
+    const i=+o.dataset.i;o.classList.add("disabled");o.classList.remove("sel");
+    if(q.correct.includes(i))o.classList.add("ok");
+    else if(session.picks.includes(i))o.classList.add("bad");
+  });
+  const eo=document.getElementById("explainOk"),en=document.getElementById("explainNo");
+  if(good){eo.innerHTML="<b>✔ Bonne réponse !</b>"+q.expOk;eo.classList.add("show");}
+  else{
+    en.innerHTML="<b>✖ Réponse incorrecte</b>"+q.expNo;en.classList.add("show");
+    eo.innerHTML="<b>✔ La bonne réponse</b>"+q.expOk;eo.classList.add("show");
+  }
+}
+function nextOrFinish(){
+  document.getElementById("explainOk").classList.remove("show");
+  document.getElementById("explainNo").classList.remove("show");
+  if(session.idx+1<session.list.length){session.idx++;renderQ();}
+  else finishQuiz();
+}
+function finishQuiz(){
+  if(session.timerId)clearInterval(session.timerId);
+  document.getElementById("quizProg").style.width="100%";
+  document.getElementById("quiz").classList.add("hidden");
+  const r=document.getElementById("results");r.classList.remove("hidden");
+  const tot=session.list.length,ok=session.correctCount,pct=Math.round(ok/tot*100);
+  document.getElementById("resTitle").textContent=session.mode==="exam"?"Résultats de l'examen":"Résultats";
+  document.getElementById("resScore").textContent=ok+" / "+tot;
+  document.getElementById("resPct").textContent=pct+"%";
+  let msg;
+  if(pct>=80)msg="Excellent ! Tu maîtrises bien la matière.";
+  else if(pct>=60)msg="C'est acquis (seuil de 60% atteint), mais consolide les points ratés.";
+  else msg="En dessous du seuil de 60%. Revois la matière et recommence.";
+  document.getElementById("resMsg").textContent=msg;
+  const s=Math.floor((Date.now()-session.startTs)/1000);
+  document.getElementById("resTime").textContent=(session.mode==="exam")
+    ? "Temps : "+String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0") : "";
+  const wrong=session.results.filter(x=>!x.good).length;
+  document.getElementById("resRetryWrong").style.display=wrong?"":"none";
+  document.getElementById("resRetryWrong").textContent="Revoir mes "+wrong+" erreur"+(wrong>1?"s":"");
+}
+function retryWrong(){
+  const ids=session.results.filter(x=>!x.good).map(x=>x.id);
+  const list=QUESTIONS.filter(q=>ids.includes(q.id));
+  if(!list.length){goHome();return;}
+  session={mode:"practice",list:shuffle(list),idx:0,picks:[],answered:false,correctCount:0,results:[],startTs:Date.now(),timerId:null};
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  document.getElementById("timer").classList.add("hidden");
+  renderQ();
+}
+function restartSame(){startSessionFrom(session.list,session.mode);}
+function startSessionFrom(list,mode){
+  session={mode,list:shuffle(list),idx:0,picks:[],answered:false,correctCount:0,results:[],startTs:Date.now(),timerId:null};
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  const tm=document.getElementById("timer");
+  if(mode==="exam"){tm.classList.remove("hidden");session.timerId=setInterval(tick,1000);tick();}else tm.classList.add("hidden");
+  renderQ();
+}
+function quitQuiz(){if(session&&session.timerId)clearInterval(session.timerId);goHome();}
+function goHome(){
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("home").classList.remove("hidden");
+  refreshStats();updateSel();
+}
+
+document.getElementById("bankInfo").textContent=QUESTIONS.length+" questions · 3 niveaux";
+buildFilters();buildMemo();refreshStats();updateSel();
+</script>
+</body>
+</html>
